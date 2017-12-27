@@ -1,6 +1,6 @@
 # Preamble ----
 rm(list=ls())
-setwd("C:/Users/Mateo/Google Drive/Ms/Micro Desarrollo/Trabajo")
+setwd("C:/Users/Mateo/Google Drive/Colciencias")
 
 library(foreign)
 library(data.table)
@@ -9,46 +9,60 @@ library(ggplot2)
 library(ggthemes)
 library(reporttools)
 
+# Parameters ----
+
+# Treatment treshold
+thold <- 0.1
 
 
+
+# Load and match data with treatment
 load("Data/data_proc.RData")
+load(paste("Results/Treatment/Treatment_",100*thold,".RData",sep = ""))
 
-idvars <- c("codmpio","treat","ano")
+data <- merge(data, treatment, by = "codmpio",
+              all.x = T)
+data[is.na(Status), Status := "Control"]
+
+idvars <- c("codmpio","Status","ano")
+
+# Subset data ----
+
+# Keep only treated and controls
+data <- subset(data, Status %in% c("Control","Treated"))
 
 # Distribution plot ----
 pret <- melt(data[,c(idvars,controls),with=F],
              id.vars = idvars)
 
-p <- ggplot(data = pret[ano == 1993], aes(  x = value, fill = treat) ) +
+p <- ggplot(data = pret[ano == 1993], aes(  x = value, fill = Status) ) +
   theme_bw() +
-  scale_fill_gdocs(name = "Tratamiento") +
+  scale_fill_gdocs() +
   geom_density(alpha = 0.3) +
   facet_wrap(~variable, scales = "free") +
-  xlab("Valor") +
-  ylab("Densidad") +
+  xlab("Value") +
+  ylab("Density") +
   theme(legend.position="bottom")
 print(p)
 
-pdf( file = "Final/Images/PreTreatDist.pdf")
-print(p)
+dev.copy(pdf, file = "Results/Images/PreTreatDist.pdf")
 dev.off()
 
 # Outcome dif distribution plot ----
 pret <- melt(data[,c(idvars,paste("d",deps,sep="_")),with=F],
              id.vars = idvars)
 
-p <- ggplot(data = pret[ano == 1993], aes(  x = value, fill = treat) ) +
+p <- ggplot(data = pret[ano == 1993], aes(  x = value, fill = Status) ) +
   theme_bw() +
-  scale_fill_gdocs(name = "Tratamiento") +
+  scale_fill_gdocs() +
   geom_density(alpha = 0.3) +
   facet_wrap(~variable, scales = "free") +
-  xlab("Valor") +
-  ylab("Densidad") +
+  xlab("Value") +
+  ylab("Density") +
   theme(legend.position="bottom")
 print(p)
 
-pdf( file = "Final/Images/Unmatched_outcomes.pdf")
-print(p)
+dev.copy(pdf, file = "Results/Images/Unmatched_outcomes.pdf")
 dev.off()
 
 # Mean comparison ----
@@ -57,9 +71,9 @@ setorderv(data, c("codmpio","ano"))
 
 # Create indicator for differences
 data[, group := 0]
-data[ano == 1993 & treat == "Tratados", group := 1]
-data[ano == 2005 & treat == "Control", group := 2]
-data[ano == 2005 & treat == "Tratados", group := 3]
+data[ano == 1993 & Status == "Tratados", group := 1]
+data[ano == 2005 & Status == "Control", group := 2]
+data[ano == 2005 & Status == "Tratados", group := 3]
 data[, group := factor(group,
                            levels = c(0,1,2,3),
                            labels = c("Control 1993","Tratamiento 1993",
@@ -76,7 +90,7 @@ tableContinuous( vars = datades[,controls],
                  print.pval = "anova",
                  pval.bound = 10^-2,
                  booktabs = T,
-                 file = "Final/Tables/Cont_pretreat.tex",
+                 file = "Results/Tables/Cont_pretreat.tex",
                  longtable = T)
 
 # Outcomes pre y post
@@ -88,7 +102,7 @@ tableContinuous( vars = datades[,deps],
                  stats = c("n","mean","s","min","max"),
                  prec = 3,
                  booktabs = T,
-                 file = "Final/Tables/Outcomes.tex",
+                 file = "Results/Tables/Outcomes.tex",
                  longtable = F,
                  lab = "tab:outcomes")
 
