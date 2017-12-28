@@ -99,7 +99,7 @@ bal_tab <- function(bal,names){
 }
 
 
-
+# Estimates atts with different methods
 estimate_atts <- function(id = "codmpio", status = "Status",
                           controls, dependents, thold = 0.1, dif = T){
   
@@ -208,5 +208,28 @@ estimate_atts <- function(id = "codmpio", status = "Status",
        file = paste("Results/Estimates/Est_",100*thold,".RData",sep = ""))
   
   return(results)
+  
+}
+
+# Formats a table of estimates
+tab <- function(t, digits = 4){
+  
+  t <- t(t)
+  
+  t[,"Est"] <- round(t[,"Est"], digits = digits)
+  t[,"SE"] <- round(t[,"SE"], digits = digits)
+  
+  p <- t[,"pval"]
+  stars <- rep("",nrow(t))
+  stars[p<0.1] <- "*"
+  stars[p<0.05] <- "**"
+  stars[p<0.01] <- "***"
+  
+  tab <- data.frame(Est = paste("$",t[,"Est"],stars,"$",sep = ""),
+                    SE = paste("$(",t[,"SE"],")$", sep =""),
+                    row.names = rownames(t),
+                    stringsAsFactors = F)
+  
+  return(tab)
   
 }

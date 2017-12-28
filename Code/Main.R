@@ -7,6 +7,17 @@ library(data.table)
 library(gtools)
 library(dplyr)
 
+# Parameters ----
+
+# Should matching be carried out
+match <- F
+# Thresholds for treatment
+tholds <- seq(.1,.4,.1)
+# Should a table be printed in tex?
+print_tab <- T
+
+# Setup ----
+
 # Set directory and seed
 setwd("C:/Users/Mateo/Google Drive/Colciencias")
 set.seed(1)
@@ -17,19 +28,66 @@ source("Code/funs/functions.R")
 # Load data
 load("Data/data_proc.RData")
 
-# Process ----
+# Matching ----
 
-for (thold in c(.1,.2,.3,.4)){
-
-  match_prot(data = data, id = "codmpio",
-             controls = controls, dep = deps, thold = thold, dif = T)
-
+if (match) {
+  
+  for (thold in tholds){
+    
+    match_prot(data = data, id = "codmpio",
+               controls = controls, dep = deps, thold = thold, dif = T)
+    
+  }
+  
 }
 
-# This is a cycle for estimating effects
-for (thold in c(.1,.2,.3,.4)){
+# Effect estimation ----
 
-  e <- estimate_atts(id = "codmpio", status = "Status",
-                controls, dependents = deps, thold = 0.1, dif = T)
-
+tables <- list()
+for (thold in tholds){
+  
+  # Find effect estimates and format them in tables
+  est <- estimate_atts(id = "codmpio", status = "Status",
+                       controls, dependents = deps, thold = thold, dif = T) %>%
+    
+    lapply(function(x) tab(x))
+  
+  # Bind tablees
+  est <- do.call(cbind, est)
+  
+  # Add an outcome as a variable and an 
+  # indicator for the treatment threshold, in the first position
+  est <- cbind(Outcome = row.names(est),
+               Treatment = paste("$",rep(thold,nrow(est)),"$", sep = ""),
+               est)
+  
+  # Delete row names
+  row.names(est) <- NULL
+  
+  # Add estimators to the list
+  tables <- c(tables, list(est))
+  
 }
+
+# Bind tables vertically
+table <- do.call(rbind, tables)
+
+# Order by outcome and treatment
+table <- table[order(table$Outcome,table$Treatment),]
+
+# Printing ----
+if ( print_tab ){
+  
+  print.xtable(xtable(table),
+               sanitize.text.function = function(x){x},
+               file = "Results/Tables/Main_results.tex",
+               booktabs = F,
+               floating = F,
+               hline.after = c(),
+               only.contents = T,
+               include.colnames = F,
+               include.rownames = F)
+  
+}
+
+
