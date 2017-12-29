@@ -127,7 +127,8 @@ estimate_atts <- function(id = "codmpio", status = "Status",
   att_match <- sapply(att_match, function(x) c(Est = x$est,
                                                SE = x$se,
                                                tstat =  x$est/x$se,
-                                               pval = (1- pnorm(abs(x$est/x$se)))*2))
+                                               pval = (1- pnorm(abs(x$est/x$se)))*2,
+                                               Nobs = x$wnobs*2))
   
   # Bias corrected estimates ----
   att_bias <- lapply(outc, function(x) Match(estimand = "ATT",
@@ -141,7 +142,8 @@ estimate_atts <- function(id = "codmpio", status = "Status",
   att_bias<- sapply(att_bias, function(x) c(Est = x$est,
                                             SE = x$se,
                                             tstat =  x$est/x$se,
-                                            pval = (1- pnorm(abs(x$est/x$se)))*2))
+                                            pval = (1- pnorm(abs(x$est/x$se)))*2,
+                                            Nobs = x$wnobs*2))
   
   
   # Naive estimators
@@ -161,18 +163,20 @@ estimate_atts <- function(id = "codmpio", status = "Status",
           data_m$y2005 <- data_m$y + data_m$dy
           
           est <- lm(y2005 ~ t, data = data_m)
-          summary(est)
           
-          naive_lev[[d]] <- coef(summary(est))
           
+          naive_lev[[d]] <- list(coef = coef(summary(est)),
+                                 nobs = nobs(est))
+                                 
         })
     
   }
   
-  naive_lev <- sapply(naive_lev, function(x) c(Est = x["t",1],
-                                               SE = x["t",2],
-                                               tstat =  x["t",3],
-                                               pval = x["t",4]))
+  naive_lev <- sapply(naive_lev, function(x) c(Est = x$coef["t",1],
+                                               SE = x$coef["t",2],
+                                               tstat =  x$coef["t",3],
+                                               pval = x$coef["t",4],
+                                               Nobs = x$nobs))
   
   
   # Naive diffs ----
@@ -183,18 +187,19 @@ estimate_atts <- function(id = "codmpio", status = "Status",
         expr = {
           
           est <- lm(dy ~ t, data = data_m)
-          summary(est)
           
-          naive_dif[[d]] <- coef(summary(est))
+          naive_dif[[d]] <- list(coef = coef(summary(est)),
+                                 nobs = nobs(est))
           
         })
     
   }
   
-  naive_dif <- sapply(naive_dif, function(x) c(Est = x["t",1],
-                                               SE = x["t",2],
-                                               tstat =  x["t",3],
-                                               pval = x["t",4]))
+  naive_dif <- sapply(naive_dif, function(x) c(Est = x$coef["t",1],
+                                               SE = x$coef["t",2],
+                                               tstat =  x$coef["t",3],
+                                               pval = x$coef["t",4],
+                                               Nobs = x$nobs))
   
   
   
@@ -227,6 +232,7 @@ tab <- function(t, digits = 4){
   
   tab <- data.frame(Est = paste("$",t[,"Est"],stars,"$",sep = ""),
                     SE = paste("$(",t[,"SE"],")$", sep =""),
+                    Nobs = paste("$",t[,"Nobs"],"$", sep =""),
                     row.names = rownames(t),
                     stringsAsFactors = F)
   
