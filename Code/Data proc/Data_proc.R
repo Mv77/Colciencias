@@ -1,6 +1,6 @@
 # Preamble ----
 rm(list=ls())
-setwd("C:/Users/Mateo/Google Drive/Gustavo/Protected")
+setwd("C:/Users/Mateo/Google Drive/Colciencias")
 
 library(foreign)
 library(data.table)
@@ -15,12 +15,16 @@ data <- read.dta(file = "Data/data.dta") %>%
   data.table()
 
 # Data Julian ----
-load("Data/data_julian.RData")
 
-# TODO: I must find the source of rain, slope, and forest_cover to not use Julian's stuff
-dataj <- subset(data05_marg, select = c("codmpio","rain","slope","forest_cover"))
+# Forest cover, rain, and slope
+newvars <- fread("Data/rain_forest_slope.csv")
+names(newvars) <- gsub("_new","",names(newvars))
 
-data <- merge(data, dataj, by = "codmpio",
+# We have pre-treatment data for 1990, but all other variables are measured in 1993.
+# Change the year to match pre-treatment period
+newvars[ano == 1990, ano := 1993]
+
+data <- merge(data, newvars, by = c("codmpio","ano"),
               all.x = T)
 
 
@@ -49,7 +53,7 @@ names(data) <- gsub("anos_est_mun","a_edu",names(data))
 # Transformar variables----
 
 # Transformar variables a porcentaje de poblacion total
-# y gastos e ingrésos a percapita
+# y gastos e ingr?sos a percapita
 data[, c("pobl_rur", "pobl_urb",
          "per_alfa", "y_total",
          "y_predial", "FBKF") := lapply(list(pobl_rur, pobl_urb, per_alfa,
@@ -70,11 +74,11 @@ data[, c("pobl_tot", "area",
 data[gpc == 0, gpc := NA]
 data[gini == 0, gini := NA]
 
-# Transformación de variables----
+# Transformaci?n de variables----
 
 # Reemplazar densidad por log densidad
 data[, densidad_pob := log(densidad_pob)]
-# Normalizar el índice de agua por 1millon
+# Normalizar el ?ndice de agua por 1millon
 data[, agua := agua/10^6]
 # Normalizar gpc por 100.000
 data[, gpc := gpc / 100000]
@@ -124,3 +128,5 @@ data <- merge(data,outc,
 # Save results ----
 save(data,controls,deps,
      file = "Data/data_proc.RData")
+
+write.csv(data, file = "Data/data_proc.csv")
