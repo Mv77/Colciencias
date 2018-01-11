@@ -16,10 +16,16 @@ tholds <- seq(.1,.4,.1)
 # Should a table be printed in tex?
 print_tab <- T
 
+
+# Matching parameters (to be used only if match == T)
+M <- 1
+caliper <- NULL
+replace <- T
+
+
 # Setup ----
 
-# Set directory and seed
-setwd("C:/Users/Mateo/Google Drive/Colciencias")
+# Set seed
 set.seed(1)
 
 # Load functions
@@ -35,7 +41,8 @@ if (match) {
   for (thold in tholds){
     
     match_prot(data = data, id = "codmpio",
-               controls = controls, dep = deps, thold = thold, dif = T)
+               controls = controls, dep = deps, thold = thold, dif = T,
+               M = M, caliper = caliper, replace = replace)
     
   }
   

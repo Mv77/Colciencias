@@ -6,7 +6,8 @@ library(xtable)
 # Do gennetic matching on protected areas with threshold as parameter,
 # Save balance tests and matching results.
 match_prot <- function(data, id = "codmpio", status = "Status",
-                       controls, dep, thold = 0.1, dif = T){
+                       controls, dep, thold = 0.1, dif = T,
+                       M = 1, caliper = NULL, replace = TRUE){
   
   # Load and merge treatment data
   load(paste("Results/Treatment/Treatment_",100*thold,".RData", sep = ""))
@@ -38,10 +39,14 @@ match_prot <- function(data, id = "codmpio", status = "Status",
   # Genetic matching
   gm <- GenMatch(Tr = data_m$t,
                  X = data_m[,controls, with = F],
-                 replace = F,
-                 M = 1,
+                 M = M,
+                 caliper = caliper,
+                 replace = replace,
                  pop.size = 1000,
                  wait.generations = 20)
+  
+  # Create a list of prameters
+  params <- list("M" = M, "caliper" = caliper, "replace" = replace)
   
   # Formula for balance diagnostic
   form <- paste(controls, collapse = "+")
@@ -65,12 +70,13 @@ match_prot <- function(data, id = "codmpio", status = "Status",
                booktabs = T,
                floating = F)
   
-  save(data_m,gm,id,status,controls,dep,
+  save(data_m,gm,id,status,controls,dep,params,
        file = paste("Results/Match/Match_",100*thold,".RData", sep =""))
   
   return(list("balance" = balance,
               "data"=data_m,
-              "gm"=gm))
+              "gm"=gm,
+              "params" = params))
   
 }
 
@@ -121,7 +127,10 @@ estimate_atts <- function(id = "codmpio", status = "Status",
                                               Y = x,
                                               Tr =data_m$t,
                                               Weight.matrix = gm,
-                                              X = data_m[,controls, with = F]))
+                                              X = data_m[,controls, with = F],
+                                              M = params$M,
+                                              caliper = params$caliper,
+                                              replace = params$replace))
   
   # Extract
   att_match <- sapply(att_match, function(x) c(Est = x$est,
@@ -136,7 +145,10 @@ estimate_atts <- function(id = "codmpio", status = "Status",
                                              Tr =data_m$t,
                                              Weight.matrix = gm,
                                              X = data_m[,controls, with = F],
-                                             BiasAdjust = T))
+                                             BiasAdjust = T,
+                                             M = params$M,
+                                             caliper = params$caliper,
+                                             replace = params$replace))
   
   # Extract
   att_bias<- sapply(att_bias, function(x) c(Est = x$est,
