@@ -73,37 +73,6 @@ match_prot <- function(data, id = "codmpio", status = "Status",
   save(data_m,gm,id,status,controls,dep,params,
        file = paste("Results/Match/Match_",100*thold,".RData", sep =""))
   
-  
-  # Post-match balance plot
-  matches <- gm$matches
-  data_match <- data_m[c(matches[,1],matches[,2]),]
-  
-  pret <- melt(data_match[,c("codmpio","Status",controls),with=F],
-               id.vars = c("codmpio","Status"))
-  
-  p <- ggplot(data = pret, aes(  x = value, fill = Status) ) +
-    theme_bw() +
-    scale_fill_gdocs() +
-    scale_color_gdocs() +
-    geom_density(alpha = 0.3) +
-    
-    geom_vline(data = pret %>%
-                 group_by(variable,Status) %>%
-                 summarise(value = mean(value, na.rm = T)),
-               aes(xintercept = value, color = Status ),
-               linetype = "dashed",
-               size = 1) +
-    
-    facet_wrap(~variable, scales = "free") +
-    xlab("Value") +
-    ylab("Density") +
-    theme(legend.position="bottom")
-  print(p)
-  
-  dev.copy(pdf, file = paste("Results/Images/ControlMatchedDist_",100*thold,".pdf", sep =""))
-  dev.off()
-  
-  
   return(list("balance" = balance,
               "data"=data_m,
               "gm"=gm,
@@ -282,3 +251,124 @@ tab <- function(t, digits = 4){
   return(tab)
   
 }
+
+# Plots of control distributions pre and post matching
+control_balance_plots <- function(data,gm,controls,id,thold){
+  
+  
+  # Pre-matching plot
+  pret <- melt(data[,c(id,"Status",controls),with=F],
+               id.vars = c(id,"Status"))
+  
+  p <- ggplot(data = pret, aes(  x = value, fill = Status) ) +
+    theme_bw() +
+    scale_fill_gdocs() +
+    scale_color_gdocs() +
+    geom_density(alpha = 0.3) +
+    
+    geom_vline(data = pret %>%
+                 group_by(variable,Status) %>%
+                 summarise(value = mean(value, na.rm = T)),
+               aes(xintercept = value, color = Status ),
+               linetype = "dashed",
+               size = 1) +
+    
+    facet_wrap(~variable, scales = "free") +
+    xlab("Value") +
+    ylab("Density") +
+    theme(legend.position="bottom")
+  print(p)
+  
+  dev.copy(pdf, file = paste("Results/Images/ControlUnmatchedDist_",thold*100,".pdf",sep =""))
+  dev.off()
+  
+  # Post - matching plot
+  
+  # Post-match balance plot
+  
+  matches <- gm$matches
+  data_match <- data_m[c(matches[,1],matches[,2]),]
+  
+  pret <- melt(data_match[,c(id,"Status",controls),with=F],
+               id.vars = c(id,"Status"))
+  
+  p <- ggplot(data = pret, aes(  x = value, fill = Status) ) +
+    theme_bw() +
+    scale_fill_gdocs() +
+    scale_color_gdocs() +
+    geom_density(alpha = 0.3) +
+    
+    geom_vline(data = pret %>%
+                 group_by(variable,Status) %>%
+                 summarise(value = mean(value, na.rm = T)),
+               aes(xintercept = value, color = Status ),
+               linetype = "dashed",
+               size = 1) +
+    
+    facet_wrap(~variable, scales = "free") +
+    xlab("Value") +
+    ylab("Density") +
+    theme(legend.position="bottom")
+  print(p)
+  
+  dev.copy(pdf, file = paste("Results/Images/ControlMatchedDist_",100*thold,".pdf", sep =""))
+  dev.off()
+  
+  
+}
+
+# Descriptive statistics tables
+desc_tables <- function(data,thold, deps, controls, id) {
+  
+  # Load treatment info
+  load(paste("Results/Treatment/Treatment_",thold*100,".RData", sep =""))
+  
+  # Paste treatment with data
+  data <- merge(data, treatment, by = "codmpio", all.x = T)
+  
+  # Non - pasted units are controls as they dont have protected areas
+  data[is.na(Status), Status := "Control"]
+  
+  # Ommit areas which are not control or treated
+  data <- subset(data, Status %in% c("Treated","Control"))
+  
+  
+  # Create indicator for different groups in which stats will be split
+  data[, group := 0]
+  data[ano == 1993 & Status == "Treated", group := 1]
+  data[ano == 2005 & Status == "Control", group := 2]
+  data[ano == 2005 & Status == "Treated", group := 3]
+  data[, group := factor(group,
+                         levels = c(0,1,2,3),
+                         labels = c("Control 1993","Treated 1993",
+                                    "Control 2005","Treated 2005"))]
+  
+  # Controles pretreatment
+  datades <- data %>%
+    subset(ano == 1993, select = c(controls,"group")) %>%
+    data.frame()
+  tableContinuous( vars = datades[,controls],
+                   group = datades$group,
+                   stats = c("n","mean","s","min","max"),
+                   prec = 2,
+                   print.pval = "anova",
+                   pval.bound = 10^-2,
+                   booktabs = T,
+                   file = paste("Results/Tables/Desc_covariates_1993_",100*thold,".tex", sep =""),
+                   longtable = T)
+  
+  # Outcomes pre y post
+  datades <- data %>%
+    subset(select = c(deps,"group")) %>%
+    data.frame()
+  tableContinuous( vars = datades[,deps],
+                   group = datades$group,
+                   stats = c("n","mean","s","min","max"),
+                   prec = 3,
+                   booktabs = T,
+                   file = paste("Results/Tables/Desc_outcomes_",100*thold,".tex", sep = ""),
+                   longtable = F,
+                   lab = "tab:outcomes")
+  
+}
+

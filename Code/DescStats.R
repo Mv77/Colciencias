@@ -1,124 +1,31 @@
 # Preamble ----
 rm(list=ls())
-setwd("C:/Users/Mateo/Google Drive/Colciencias")
 
 library(foreign)
 library(data.table)
 library(dplyr)
-library(ggplot2)
-library(ggthemes)
 library(reporttools)
+
+source("Code/funs/functions.R")
 
 # Parameters ----
 
-# Treatment treshold
-thold <- 0.1
+# Treatment tresholds
+tholds <- seq(.1,.4,.1)
 
-
-
-# Load and match data with treatment
-load("Data/data_proc.RData")
-load(paste("Results/Treatment/Treatment_",100*thold,".RData",sep = ""))
-
-data <- merge(data, treatment, by = "codmpio",
-              all.x = T)
-data[is.na(Status), Status := "Control"]
-
-idvars <- c("codmpio","Status","ano")
-
-# Subset data ----
-
-# Keep only treated and controls
-data <- subset(data, Status %in% c("Control","Treated"))
-
-# Distribution plot ----
-pret <- melt(data[,c(idvars,controls),with=F],
-             id.vars = idvars)
-
-p <- ggplot(data = pret[ano == 1993], aes(  x = value, fill = Status) ) +
-  theme_bw() +
-  scale_fill_gdocs() +
-  scale_color_gdocs() +
-  geom_density(alpha = 0.3) +
+# Pre and post-match balance plots ----
+for (thold in tholds){
   
-  geom_vline(data = pret %>%
-               group_by(variable,Status) %>%
-               summarise(value = mean(value, na.rm = T)),
-             aes(xintercept = value, color = Status ),
-             linetype = "dashed",
-             size = 1) +
-                
-  facet_wrap(~variable, scales = "free") +
-  xlab("Value") +
-  ylab("Density") +
-  theme(legend.position="bottom")
-print(p)
+  load(paste("Results/Match/Match_",100*thold,".RData",sep =""))
+  
+  control_balance_plots(data = data_m, gm = gm, controls, id, thold)
+  
+}
 
-dev.copy(pdf, file = "Results/Images/ControlUnmatchedDist.pdf")
-dev.off()
-
-# Outcome dif distribution plot ----
-pret <- melt(data[,c(idvars,paste("d",deps,sep="_")),with=F],
-             id.vars = idvars)
-
-p <- ggplot(data = pret[ano == 1993], aes(  x = value, fill = Status) ) +
-  theme_bw() +
-  scale_fill_gdocs() +
-  scale_color_gdocs() +
-  geom_vline(data = pret %>%
-               group_by(variable,Status) %>%
-               summarise(value = mean(value, na.rm = T)),
-             aes(xintercept = value, color = Status ),
-             linetype = "dashed",
-             size = 1) +
-  geom_density(alpha = 0.3) +
-  facet_wrap(~variable, scales = "free") +
-  xlab("Value") +
-  ylab("Density") +
-  theme(legend.position="bottom")
-print(p)
-
-dev.copy(pdf, file = "Results/Images/Unmatched_outcomes.pdf")
-dev.off()
-
-# Mean comparison ----
-
-setorderv(data, c("codmpio","ano"))
-
-# Create indicator for differences
-data[, group := 0]
-data[ano == 1993 & Status == "Tratados", group := 1]
-data[ano == 2005 & Status == "Control", group := 2]
-data[ano == 2005 & Status == "Tratados", group := 3]
-data[, group := factor(group,
-                           levels = c(0,1,2,3),
-                           labels = c("Control 1993","Tratamiento 1993",
-                                      "Control 2005","Tratamiento 2005"))]
-
-# Controles pretreatment
-datades <- data %>%
-           subset(ano == 1993, select = c(controls,"group")) %>%
-           data.frame()
-tableContinuous( vars = datades[,controls],
-                 group = datades$group,
-                 stats = c("n","mean","s","min","max"),
-                 prec = 2,
-                 print.pval = "anova",
-                 pval.bound = 10^-2,
-                 booktabs = T,
-                 file = "Results/Tables/Cont_pretreat.tex",
-                 longtable = T)
-
-# Outcomes pre y post
-datades <- data %>%
-  subset(select = c(deps,"group")) %>%
-  data.frame()
-tableContinuous( vars = datades[,deps],
-                 group = datades$group,
-                 stats = c("n","mean","s","min","max"),
-                 prec = 3,
-                 booktabs = T,
-                 file = "Results/Tables/Outcomes.tex",
-                 longtable = F,
-                 lab = "tab:outcomes")
-
+# Tables of descriptive statistics ----
+load("Data/data_proc.RData")
+for (thold in tholds) {
+  
+  desc_tables(data,thold, deps, controls, id)
+  
+}

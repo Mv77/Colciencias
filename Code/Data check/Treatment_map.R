@@ -1,6 +1,5 @@
 # Preamble ----
 rm(list=ls())
-setwd("C:/Users/Mateo/Google Drive/Colciencias")
 
 library(data.table)
 library(dplyr)
