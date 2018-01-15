@@ -1,3 +1,5 @@
 - Program mechanisms.
 - The 2005 census is downloadable. The 1993 is not. In census 2005 the occupation sector is a "post-question" of question 47b, and it doesn't show up in the downloaded data. I should go ask at punto dane.
 Also check other variables.
+- Filter out municipalities created after 1993 (info in panel cede)
+- Add vertical lines on means in matching distribution plots

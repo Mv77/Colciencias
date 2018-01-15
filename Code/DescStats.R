@@ -38,14 +38,23 @@ pret <- melt(data[,c(idvars,controls),with=F],
 p <- ggplot(data = pret[ano == 1993], aes(  x = value, fill = Status) ) +
   theme_bw() +
   scale_fill_gdocs() +
+  scale_color_gdocs() +
   geom_density(alpha = 0.3) +
+  
+  geom_vline(data = pret %>%
+               group_by(variable,Status) %>%
+               summarise(value = mean(value, na.rm = T)),
+             aes(xintercept = value, color = Status ),
+             linetype = "dashed",
+             size = 1) +
+                
   facet_wrap(~variable, scales = "free") +
   xlab("Value") +
   ylab("Density") +
   theme(legend.position="bottom")
 print(p)
 
-dev.copy(pdf, file = "Results/Images/PreTreatDist.pdf")
+dev.copy(pdf, file = "Results/Images/ControlUnmatchedDist.pdf")
 dev.off()
 
 # Outcome dif distribution plot ----
@@ -55,6 +64,13 @@ pret <- melt(data[,c(idvars,paste("d",deps,sep="_")),with=F],
 p <- ggplot(data = pret[ano == 1993], aes(  x = value, fill = Status) ) +
   theme_bw() +
   scale_fill_gdocs() +
+  scale_color_gdocs() +
+  geom_vline(data = pret %>%
+               group_by(variable,Status) %>%
+               summarise(value = mean(value, na.rm = T)),
+             aes(xintercept = value, color = Status ),
+             linetype = "dashed",
+             size = 1) +
   geom_density(alpha = 0.3) +
   facet_wrap(~variable, scales = "free") +
   xlab("Value") +

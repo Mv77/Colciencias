@@ -7,7 +7,7 @@ library(xtable)
 # Save balance tests and matching results.
 match_prot <- function(data, id = "codmpio", status = "Status",
                        controls, dep, thold = 0.1, dif = T,
-                       M = 1, caliper = NULL, replace = TRUE){
+                       M = 1, caliper = NULL, replace = TRUE, popsize = 1000){
   
   # Load and merge treatment data
   load(paste("Results/Treatment/Treatment_",100*thold,".RData", sep = ""))
@@ -42,7 +42,7 @@ match_prot <- function(data, id = "codmpio", status = "Status",
                  M = M,
                  caliper = caliper,
                  replace = replace,
-                 pop.size = 1000,
+                 pop.size = popsize,
                  wait.generations = 20)
   
   # Create a list of prameters
@@ -72,6 +72,37 @@ match_prot <- function(data, id = "codmpio", status = "Status",
   
   save(data_m,gm,id,status,controls,dep,params,
        file = paste("Results/Match/Match_",100*thold,".RData", sep =""))
+  
+  
+  # Post-match balance plot
+  matches <- gm$matches
+  data_match <- data_m[c(matches[,1],matches[,2]),]
+  
+  pret <- melt(data_match[,c("codmpio","Status",controls),with=F],
+               id.vars = c("codmpio","Status"))
+  
+  p <- ggplot(data = pret, aes(  x = value, fill = Status) ) +
+    theme_bw() +
+    scale_fill_gdocs() +
+    scale_color_gdocs() +
+    geom_density(alpha = 0.3) +
+    
+    geom_vline(data = pret %>%
+                 group_by(variable,Status) %>%
+                 summarise(value = mean(value, na.rm = T)),
+               aes(xintercept = value, color = Status ),
+               linetype = "dashed",
+               size = 1) +
+    
+    facet_wrap(~variable, scales = "free") +
+    xlab("Value") +
+    ylab("Density") +
+    theme(legend.position="bottom")
+  print(p)
+  
+  dev.copy(pdf, file = paste("Results/Images/ControlMatchedDist_",100*thold,".pdf", sep =""))
+  dev.off()
+  
   
   return(list("balance" = balance,
               "data"=data_m,

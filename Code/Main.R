@@ -10,7 +10,7 @@ library(dplyr)
 # Parameters ----
 
 # Should matching be carried out
-match <- F
+match <- T
 # Thresholds for treatment
 tholds <- seq(.1,.4,.1)
 # Should a table be printed in tex?
@@ -21,6 +21,7 @@ print_tab <- T
 M <- 1
 caliper <- NULL
 replace <- T
+popsize <- 1000
 
 
 # Setup ----
@@ -42,7 +43,7 @@ if (match) {
     
     match_prot(data = data, id = "codmpio",
                controls = controls, dep = deps, thold = thold, dif = T,
-               M = M, caliper = caliper, replace = replace)
+               M = M, caliper = caliper, replace = replace, popsize = popsize)
     
   }
   
