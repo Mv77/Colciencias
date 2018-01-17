@@ -1,3 +1,11 @@
+# Taken from http://web.sonoma.edu/users/h/hanauer/Docs/plm_dif2.R
+# Supplementary Materials: Implications of heterogeneous
+# impacts of protected areas on deforestation and poverty.
+
+# Hanauer, M & Canavire-Bacarreza, G. (2015)
+
+# Very slightly modified by Mateo Velasquez-Giraldo
+
 ##Program to estimate partial linear model using loess at last stage to estimate nonparametric portion
 
 plm <- function(data, x="String nonpar var", y="string for outcome", z="string for controls", order=10,
@@ -66,7 +74,7 @@ plm <- function(data, x="String nonpar var", y="string for outcome", z="string f
   } #end for order
   #regression without intercept	
   reg <- lm(Y.delta ~  0 + Z.delta)
-  print(summary(reg))
+  #print(summary(reg))
   
   #Get the coefficients from the differnce regression
   b.dif <- reg$coefficients
@@ -92,7 +100,10 @@ plm <- function(data, x="String nonpar var", y="string for outcome", z="string f
       #lines(seq, (lowp$fit + 1.96*lowp$se), lty=2)
       #lines(seq, (lowp$fit - 1.96*lowp$se), lty=2)			
     }#end if se	
-    plm.out <- list(y.plm=y.plm, x.plm=Xs, loess.fit=low$fit, pred.fit=lowp$fit, se=lowp$se)
+    plm.out <- list(y.plm=y.plm, x.plm=Xs, loess.fit=low$fit, pred.fit=lowp$fit, se=lowp$se,
+                    pred.upp = lowp$fit - 1.96*lowp$se,
+                    pred.low = lowp$fit + 1.96*lowp$se,
+                    pred.x = seq)
   }#end if loess		
   
   if(loess==FALSE){

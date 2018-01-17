@@ -10,11 +10,11 @@ library(dplyr)
 # Parameters ----
 
 # Should matching be carried out
-match <- T
+match <- F
 # Thresholds for treatment
 tholds <- seq(.1,.4,.1)
 # Should a table be printed in tex?
-print_tab <- T
+print_tab <- F
 
 
 # Matching parameters (to be used only if match == T)
@@ -83,7 +83,7 @@ table <- do.call(rbind, tables)
 # Order by outcome and treatment
 table <- table[order(table$Outcome,table$Treatment),]
 
-# Printing ----
+# Printing of tables ----
 if ( print_tab ){
   
   print.xtable(xtable(table),
@@ -95,5 +95,21 @@ if ( print_tab ){
                only.contents = T,
                include.colnames = F,
                include.rownames = F)
+  
+}
+
+# Effect heterogeneity ----
+
+tholds_et <- 0.1
+
+for (thold in tholds_et) {
+  
+  plots <- conditional_plot(thold)
+  
+  for (p in plots) {
+    
+    print(p$plot)
+    
+  }
   
 }

@@ -3,6 +3,9 @@ library(Matching)
 library(wrapr)
 library(xtable)
 
+# Load plm function
+source("Code/funs/plm.R")
+
 # Do gennetic matching on protected areas with threshold as parameter,
 # Save balance tests and matching results.
 match_prot <- function(data, id = "codmpio", status = "Status",
@@ -372,3 +375,77 @@ desc_tables <- function(data,thold, deps, controls, id) {
   
 }
 
+# Generate conditional effect plots similar to the ones in Hanauer & Canavire (2015)
+conditional_plot <- function(thold){
+  
+  # Load match results
+  load(paste("Results/Match/Match_",100*thold,".RData", sep =""))
+  
+  # Get the matched subsample
+  # TODO: If there is replacement, there are duplicates in control sample (is this ok?)
+  data <- data_m[c(gm$matches[,1],gm$matches[,2]),]
+  
+  dep <- paste("d",dep, sep ="_")
+  
+  data <- subset(data, select = c("Status",controls, dep))
+  data <- data[complete.cases(data),]
+  
+  results <- list()
+  
+  for (y in dep) {
+    
+    table <- data.frame(Variable = character(),
+                        Status = character(),
+                        X = numeric(),
+                        Y = numeric(),
+                        Upp = numeric(),
+                        Low = numeric())
+    
+    for (x in controls){
+      
+      z <- setdiff(controls,x)
+      
+      for (stat in c("Control","Treated")){
+        
+        plm_res <- plm(as.data.frame(data[Status == stat,]),
+                       x = x, y = y, z = z, loess = T)
+        
+        tab <- data.frame(X = plm_res$pred.x,
+                          Y = plm_res$pred.fit,
+                          Upp = plm_res$pred.upp,
+                          Low = plm_res$pred.low)
+        
+        tab$Variable <- x
+        tab$Status <- stat
+        
+        table <- rbind(table,tab) 
+        
+      }
+      
+    }
+    
+    table$Variable <- as.factor(table$Variable)
+    table$Status <- as.factor(table$Status)
+    
+    p <- ggplot(data = table, aes(x = X, y = Y, ymin = Low, ymax = Upp,
+                                  colour = Status, fill = Status)) +
+      theme_bw() +
+      scale_color_gdocs() +
+      scale_fill_gdocs() +
+      
+      geom_line(size = 1) +
+      geom_ribbon(alpha = 0.2) +
+      
+      geom_hline(yintercept = 0, color = "black") +
+      
+      facet_wrap(~Variable, scales = "free_x")
+    
+    res <- list(list("table"=table,"plot"=p))
+    names(res) <- y
+    results <- c(results, res)
+    
+  }
+  
+  return(results)
+  
+} 
