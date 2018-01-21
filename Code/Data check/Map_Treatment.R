@@ -12,7 +12,10 @@ library(broom)
 
 # Parameters ----
 tholds <- seq(0.1,0.4,0.1)
+genetic <- T
 
+# Infix
+infix <- ifelse(genetic, "GEN", "MAH")
 
 # Load protected areas shp ----
 areas <- readShapePoly("Data/SHP/Areas/area_protegidaPolygon",IDvar = "id_pnn")
@@ -29,11 +32,20 @@ areas <- merge(areas, areasdta[,c("id_pnn","categoria"), with =F],
 for (thold in tholds) {
   
   # Load data ----
-  load(paste("Results/Match/Match_",100*thold,".RData",sep =""))
+  load(paste("Results/Match/Match_",100*thold,"_",infix,".RData",sep =""))
   
-  # Generate set with only matched data ----
-  matches <- gm$matches
-  data_m[matches[,2], Status := "Matched Control"]
+  # Create a dataset with treatment status
+  t <- rbind(data.table("codmpio" = unique(m$id_controls), "Status" = "Matched Control"),
+             data.table("codmpio" = m$id_treated, "Status" = "Treated"),
+             data.table("codmpio" = m$id_unused, "Status" = "Unused Control"))
+  
+  # Add municipalities that were excluded
+  load(paste("Results/Treatment/Treatment_",100*thold,".RData", sep =""))
+  
+  names(treatment) <- c("codmpio","Status")  
+  excluded <- treatment$codmpio[treatment$Status == "Protected"]
+  
+  t <- rbind(t, data.table("codmpio" = excluded, "Status" = "Excluded"))
   
   # Read shp ----
   map <- readShapePoly("Data/SHP/Municipios/MGN_ADM_MPIO_POLITICO",IDvar = "MPIO_CCNCT") %>%
@@ -44,25 +56,16 @@ for (thold in tholds) {
   
   # Merge map with treatment info ----
   
-  data_m <- subset(data_m, select = c("codmpio","Status"))
-  
-  # Add municipalities that were excluded
-  load(paste("Results/Treatment/Treatment_",100*thold,".RData", sep =""))
-  
-  data_m <- rbind(data_m, treatment[Status == "Protected"])
-  
   # Merge with map
-  map <- merge(map, data_m[, c("codmpio","Status"), with = F],
-               by = "codmpio", all.x = T)
+  map <- merge(map, t, by = "codmpio", all.x = T)
   
   # Change NA's for "no data"
   map[, Status := as.character(Status)]
   map[is.na(Status), Status := "No Info"]
-  map[Status == "Protected", Status := "Excluded"]
   
   # Change order of factor levels
   map[, Status := factor(Status,
-                         levels = c("Treated","Matched Control","Control",
+                         levels = c("Treated","Matched Control","Unused Control",
                                     "Excluded","No Info"))]
   
   # Plot ----
@@ -88,7 +91,7 @@ for (thold in tholds) {
   print(p)
   
   dev.copy(pdf,
-           file = paste("Results/Maps/Treatment_",thold*100,".pdf",sep =""))
+           file = paste("Results/Maps/Treatment_",thold*100,"_",infix,".pdf",sep =""))
   dev.off()
   
 }

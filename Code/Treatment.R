@@ -1,6 +1,5 @@
 # Preamble ----
 rm(list=ls())
-setwd("C:/Users/Mateo/Google Drive/Gustavo/Protected")
 
 library(data.table)
 library(dplyr)
@@ -10,7 +9,7 @@ library(dplyr)
 # Categories considered in treatment
 cats <- c("PNN","RN")
 # Treshold for percentage coverage for treatment
-thold <- 0.4
+thold <- 0.1
 # Maximum year of establishment
 ymax <- 1993
 
@@ -45,11 +44,13 @@ prot[, Protection := cummax(Protection), by = codmpio]
 prot[, Status := max(Protection), by = codmpio]
 
 treatment <- prot %>%
-  select(c("codmpio","Status")) %>%
+  dplyr::select(c("codmpio","Status")) %>%
   unique()
 
 treatment[, Status := factor(Status, levels = c(0,1,2),
                              labels = c("Control","Protected","Treated"))]
+
+names(treatment) <- c("codmpio",paste("status",100*thold,sep ="_"))
 
 
 # Save results ----

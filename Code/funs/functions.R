@@ -2,51 +2,49 @@ library(data.table)
 library(Matching)
 library(wrapr)
 library(xtable)
+library(ggplot2)
+library(ggthemes)
 
 # Load plm function
 source("Code/funs/plm.R")
 
 # Do gennetic matching on protected areas with threshold as parameter,
 # Save balance tests and matching results.
-match_prot <- function(data, id = "codmpio", status = "Status",
-                       controls, dep, thold = 0.1, dif = T,
+match_prot <- function(data, id = "codmpio", treatment = "Status",
+                       controls, dep, genetic = T, thold = 0.1, dif = T,
                        M = 1, caliper = NULL, replace = TRUE, popsize = 1000){
   
-  # Load and merge treatment data
-  load(paste("Results/Treatment/Treatment_",100*thold,".RData", sep = ""))
-  
-  data <- merge(data, treatment, by = id, all.x = T)
-  
-  # Those not treated or protected can serve as controls
-  data[is.na(Status), Status := "Control"]
-  
-  # Filter to 1993
-  data93 <- subset(data, ano == 1993)
-  
-  setorderv(data93,c("Status","codmpio"))
-  
-  # Create a dataset with only treated and controls, and relevant variables
-  dep_d <- paste("d_",dep, sep ="")
-  data_m <- subset(data93,
-                   subset = Status %in% c("Treated","Control"),
-                   select = c(id,status,controls,dep,dep_d))
+  # Setup infix for saving results
+  infix <- ifelse(genetic,"GEN","MAH")
   
   # Create a numeric index for treatment
-  data_m[, t := ifelse(Status == "Treated",1,0)]
+  data$t <- ifelse(data[[treatment]] == "Treated",1,0)
   
   # Matching ----
+
+  if (genetic){
+    
+    
+    # Genetic matching
+    weightm <- GenMatch(Tr = data$t,
+                   X = data[,controls, with = F],
+                   M = M,
+                   caliper = caliper,
+                   replace = replace,
+                   pop.size = popsize,
+                   wait.generations = 20)
+    
+    weight <- 3
+    
+  } else {
+    
+    # Mahalanobis distance matching
+    weightm <- NULL
+    weight <- 2
+    
+  }
   
-  # Only complete rows
-  data_m <- subset(data_m, complete.cases(data_m))
   
-  # Genetic matching
-  gm <- GenMatch(Tr = data_m$t,
-                 X = data_m[,controls, with = F],
-                 M = M,
-                 caliper = caliper,
-                 replace = replace,
-                 pop.size = popsize,
-                 wait.generations = 20)
   
   # Create a list of prameters
   params <- list("M" = M, "caliper" = caliper, "replace" = replace)
@@ -56,12 +54,13 @@ match_prot <- function(data, id = "codmpio", status = "Status",
   form <- paste("t ~",form)
   
   # Pre and post matching balance diagnostic
-  mt <- Match(Tr = data_m$t,
-              Weight.matrix = gm,
-              X = data_m[,controls, with = F])
+  mt <- Match(Tr = data$t,
+              Weight.matrix = weightm,
+              Weight = weight,
+              X = data[,controls, with = F])
   
   bal <- MatchBalance(formula(form),
-                      data = data_m,
+                      data = data,
                       nboots = 1000,
                       match.out = mt)
   
@@ -69,17 +68,30 @@ match_prot <- function(data, id = "codmpio", status = "Status",
   balance <- bal_tab(bal, controls)
   table <- xtable(balance)
   print.xtable(table,
-               file = paste("Results/Tables/Balance_",100*thold,".tex",sep = ""),
+               file = paste("Results/Tables/Balance_",100*thold,"_",infix,".tex",sep = ""),
                booktabs = T,
                floating = F)
   
-  save(data_m,gm,id,status,controls,dep,params,
-       file = paste("Results/Match/Match_",100*thold,".RData", sep =""))
+  id_controls <- data[[id]][mt$index.control]
   
-  return(list("balance" = balance,
-              "data"=data_m,
-              "gm"=gm,
-              "params" = params))
+  id_treated <- data[[id]][mt$index.treated]
+  
+  id_unused <- setdiff(data[[id]], c(id_controls,id_treated))
+  
+  m <- list("id" = id,
+            "treatment" = treatment,
+            "controls" = controls,
+            "balance" = balance,
+            "weight_matrix"=weightm,
+            "weight" = weight,
+            "id_controls" = id_controls,
+            "id_treated" = id_treated,
+            "id_unused" = id_unused,
+            "params" = params)
+  
+  save(m, file = paste("Results/Match/Match_",100*thold,"_",infix,".RData", sep =""))
+  
+  return(m)
   
 }
 
@@ -109,11 +121,7 @@ bal_tab <- function(bal,names){
 
 
 # Estimates atts with different methods
-estimate_atts <- function(id = "codmpio", status = "Status",
-                          controls, dependents, thold = 0.1, dif = T){
-  
-  # Load data
-  load(paste("Results/Match/Match_",100*thold,".RData", sep =""))
+estimate_atts <- function(data, match, dependents, thold, dif){
   
   if (dif) {
     outcomes <- paste("d",dependents,sep="_")
@@ -121,19 +129,24 @@ estimate_atts <- function(id = "codmpio", status = "Status",
     # TODO
   }
   
-  outc <- data_m[,outcomes, with = F]
+  # Create a numeric index for treatment
+  data$t <- ifelse(data[[m$treatment]] == "Treated",1,0)
+  
+  # Extract outcomes
+  outc <- data[,outcomes, with = F]
   
   # Matching Estimates
   
   # Compute estimates with the genetic match
   att_match <- lapply(outc, function(x) Match(estimand = "ATT",
                                               Y = x,
-                                              Tr =data_m$t,
-                                              Weight.matrix = gm,
-                                              X = data_m[,controls, with = F],
-                                              M = params$M,
-                                              caliper = params$caliper,
-                                              replace = params$replace))
+                                              Tr =data$t,
+                                              Weight.matrix = match$weight_matrix,
+                                              Weight = match$weight,
+                                              X = data[,match$controls, with = F],
+                                              M = match$params$M,
+                                              caliper = match$params$caliper,
+                                              replace = match$params$replace))
   
   # Extract
   att_match <- sapply(att_match, function(x) c(Est = x$est,
@@ -145,13 +158,14 @@ estimate_atts <- function(id = "codmpio", status = "Status",
   # Bias corrected estimates ----
   att_bias <- lapply(outc, function(x) Match(estimand = "ATT",
                                              Y = x,
-                                             Tr =data_m$t,
-                                             Weight.matrix = gm,
-                                             X = data_m[,controls, with = F],
+                                             Tr =data$t,
+                                             Weight.matrix = match$weight_matrix,
+                                             Weight = match$weight,
+                                             X = data[,match$controls, with = F],
                                              BiasAdjust = T,
-                                             M = params$M,
-                                             caliper = params$caliper,
-                                             replace = params$replace))
+                                             M = match$params$M,
+                                             caliper = match$params$caliper,
+                                             replace = match$params$replace))
   
   # Extract
   att_bias<- sapply(att_bias, function(x) c(Est = x$est,
@@ -175,9 +189,9 @@ estimate_atts <- function(id = "codmpio", status = "Status",
                   dy = paste("d",d, sep ="_")),
         expr = {
           
-          data_m$y2005 <- data_m$y + data_m$dy
+          data$y2005 <- data$y + data$dy
           
-          est <- lm(y2005 ~ t, data = data_m)
+          est <- lm(y2005 ~ t, data = data)
           
           
           naive_lev[[d]] <- list(coef = coef(summary(est)),
@@ -196,12 +210,12 @@ estimate_atts <- function(id = "codmpio", status = "Status",
   
   # Naive diffs ----
   naive_dif <- list()
-  for (d in dep){
+  for (d in dependents){
     
     let(alias = c(dy = paste("d",d, sep ="_")),
         expr = {
           
-          est <- lm(dy ~ t, data = data_m)
+          est <- lm(dy ~ t, data = data)
           
           naive_dif[[d]] <- list(coef = coef(summary(est)),
                                  nobs = nobs(est))
@@ -256,23 +270,37 @@ tab <- function(t, digits = 4){
 }
 
 # Plots of control distributions pre and post matching
-control_balance_plots <- function(data,gm,controls,id,thold){
+control_balance_plots <- function(data, m, controls,id,thold){
   
+  
+  # Subset data to only those passed to the matching procedure
+  data <- subset(data,
+                 ano == 1993 & codmpio %in% c(m$id_controls,m$id_treated,m$id_unused))
+  
+  # Create a dataset with treatment status
+  t <- rbind(data.table("codmpio" = unique(m$id_controls), "Status" = "Matched Control"),
+             data.table("codmpio" = m$id_treated, "Status" = "Treated"),
+             data.table("codmpio" = m$id_unused, "Status" = "Unused Control"))
+  
+  data <- merge(data, t, by = "codmpio", all.x = T)
+  
+  data[, Treatment := "Control"]
+  data[Status == "Treated", Treatment := "Treated"]
   
   # Pre-matching plot
-  pret <- melt(data[,c(id,"Status",controls),with=F],
-               id.vars = c(id,"Status"))
+  pret <- melt(data[,c(id,"Treatment",controls),with=F],
+               id.vars = c(id,"Treatment"))
   
-  p <- ggplot(data = pret, aes(  x = value, fill = Status) ) +
+  pre <- ggplot(data = pret, aes(  x = value, fill = Treatment) ) +
     theme_bw() +
     scale_fill_gdocs() +
     scale_color_gdocs() +
     geom_density(alpha = 0.3) +
     
     geom_vline(data = pret %>%
-                 group_by(variable,Status) %>%
+                 group_by(variable,Treatment) %>%
                  summarise(value = mean(value, na.rm = T)),
-               aes(xintercept = value, color = Status ),
+               aes(xintercept = value, color = Treatment ),
                linetype = "dashed",
                size = 1) +
     
@@ -280,22 +308,21 @@ control_balance_plots <- function(data,gm,controls,id,thold){
     xlab("Value") +
     ylab("Density") +
     theme(legend.position="bottom")
-  print(p)
   
-  dev.copy(pdf, file = paste("Results/Images/ControlUnmatchedDist_",thold*100,".pdf",sep =""))
-  dev.off()
   
   # Post - matching plot
   
   # Post-match balance plot
   
-  matches <- gm$matches
-  data_match <- data_m[c(matches[,1],matches[,2]),]
+  # List of used units, with duplicates if matching is done with replacement
+  used_ids <- c(m$id_controls,m$id_treated)
   
-  pret <- melt(data_match[,c(id,"Status",controls),with=F],
+  data <- data[match(used_ids, data[[id]]),]
+  
+  pret <- melt(data[,c(id,"Status",controls),with=F],
                id.vars = c(id,"Status"))
   
-  p <- ggplot(data = pret, aes(  x = value, fill = Status) ) +
+  post <- ggplot(data = pret, aes(  x = value, fill = Status) ) +
     theme_bw() +
     scale_fill_gdocs() +
     scale_color_gdocs() +
@@ -312,19 +339,18 @@ control_balance_plots <- function(data,gm,controls,id,thold){
     xlab("Value") +
     ylab("Density") +
     theme(legend.position="bottom")
-  print(p)
   
-  dev.copy(pdf, file = paste("Results/Images/ControlMatchedDist_",100*thold,".pdf", sep =""))
-  dev.off()
+  plots <- list("Pre" = pre, "Post" = post)
   
-  
+  return(plots)
+
 }
 
 # Descriptive statistics tables
-desc_tables <- function(data,thold, deps, controls, id) {
+desc_tables <- function(data,treatment, deps, controls, id) {
   
-  # Load treatment info
-  load(paste("Results/Treatment/Treatment_",thold*100,".RData", sep =""))
+  # Rename treatment info
+  names(treatment) <- c("codmpio","Status")
   
   # Paste treatment with data
   data <- merge(data, treatment, by = "codmpio", all.x = T)
@@ -376,20 +402,15 @@ desc_tables <- function(data,thold, deps, controls, id) {
 }
 
 # Generate conditional effect plots similar to the ones in Hanauer & Canavire (2015)
-conditional_plot <- function(thold){
+conditional_plot <- function(data,m,dep){
   
-  # Load match results
-  load(paste("Results/Match/Match_",100*thold,".RData", sep =""))
+  # Keep only treated unites and matched controls
+  control_pos <- match(m$id_controls, data[[m$id]])
+  treated_pos <- match(m$id_treated, data[[m$id]])
   
-  # Get the matched subsample
-  # TODO: If there is replacement, there are duplicates in control sample (is this ok?)
-  data <- data_m[c(gm$matches[,1],gm$matches[,2]),]
+  data <- data[c(control_pos,treated_pos),]
   
-  dep <- paste("d",dep, sep ="_")
-  
-  data <- subset(data, select = c("Status",controls, dep))
-  data <- data[complete.cases(data),]
-  
+  controls <- m$controls
   results <- list()
   
   for (y in dep) {

@@ -1,6 +1,5 @@
 # Preamble ----
 rm(list=ls())
-setwd("C:/Users/Mateo/Google Drive/Gustavo/Protected")
 
 library(data.table)
 library(dplyr)
