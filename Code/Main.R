@@ -23,7 +23,7 @@ genetic <- T
 M <- 1
 caliper <- NULL
 replace <- T
-popsize <- 1000
+popsize <- 5000
 
 # Setup ----
 

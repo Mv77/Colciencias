@@ -11,6 +11,8 @@ library(broom)
 
 outcomes <- c("nbi","gini","gpc")
 
+output <- "png"
+
 # Load Data
 load("Data/data_proc.RData")
 data <- subset(data,select = c("codmpio","ano",outcomes))
@@ -32,7 +34,7 @@ map <- rbind(merge(map, data[ano == 1993],
 for (out in outcomes){
   
   p <- ggplot() +
-    theme_bw() +
+    theme_map() +
     geom_polygon(data = map,
                  aes_string(x = "long", y = "lat",
                             group = "group",
@@ -43,32 +45,50 @@ for (out in outcomes){
   
   print(p)
   
-  dev.copy(pdf,
-           file = paste("Results/Maps/",out,".pdf"))
-  dev.off()
+  if (output == "pdf"){
+    
+    dev.copy(pdf,
+             file = paste("Results/Maps/",out,".pdf",sep =""))
+    dev.off()
+    
+  } else if (output == "png") {
+    
+    dev.copy(png,
+             file = paste("Results/Maps/",out,".png", sep =""))
+    dev.off()
+    
+  } else if (output == "jpeg") {
+    
+    dev.copy(jpeg,
+             file = paste("Results/Maps/",out,".jpeg", sep =""))
+    dev.off()
+    
+  }
+  
+  
   
 }
 
 # Julian ----
-load("Data/data_julian.RData")
-data <- data.table(data05_marg)
-rm(list = setdiff(ls(),c("map","data")))
-data[,  Ind := 1]
-
-data <- merge(map, select(data, c("codmpio","Ind")),
-              all.x = T)
-# Plot
-p <- ggplot() +
-  theme_bw() +
-  geom_polygon(data = data,
-               aes_string(x = "long", y = "lat",
-                          group = "group",
-                          fill = "Ind"),
-               size = .3,
-               colour = 'black')
-print(p)
-
-dev.copy(pdf,
-         file = "Results/Maps/Julian_obs.pdf")
-dev.off()
+# load("Data/data_julian.RData")
+# data <- data.table(data05_marg)
+# rm(list = setdiff(ls(),c("map","data")))
+# data[,  Ind := 1]
+# 
+# data <- merge(map, select(data, c("codmpio","Ind")),
+#               all.x = T)
+# # Plot
+# p <- ggplot() +
+#   theme_bw() +
+#   geom_polygon(data = data,
+#                aes_string(x = "long", y = "lat",
+#                           group = "group",
+#                           fill = "Ind"),
+#                size = .3,
+#                colour = 'black')
+# print(p)
+# 
+# dev.copy(pdf,
+#          file = "Results/Maps/Julian_obs.pdf")
+# dev.off()
 

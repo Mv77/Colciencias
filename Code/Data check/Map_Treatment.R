@@ -72,6 +72,9 @@ for (thold in tholds) {
   
   p <- ggplot() +
     theme_map() +
+    theme(legend.text=element_text(size=12),
+          legend.title=element_text(size=12),
+          legend.background = element_rect(fill = "transparent")) +
     scale_fill_canva(palette = "Primary colors with a vibrant twist") +
     geom_polygon(data = map,
                  aes(x = long, y = lat,

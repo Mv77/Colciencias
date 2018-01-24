@@ -20,7 +20,7 @@ match_prot <- function(data, id = "codmpio", treatment = "Status",
   # Create a numeric index for treatment
   data$t <- ifelse(data[[treatment]] == "Treated",1,0)
   
-  # Matching ----
+  # Matching
 
   if (genetic){
     
@@ -32,7 +32,7 @@ match_prot <- function(data, id = "codmpio", treatment = "Status",
                    caliper = caliper,
                    replace = replace,
                    pop.size = popsize,
-                   wait.generations = 20)
+                   wait.generations = 40)
     
     weight <- 3
     
