@@ -3,19 +3,19 @@
 rm(list = ls())
 
 library(data.table)
-
+library(xtable)
 library(gtools)
 library(dplyr)
 
 # Parameters ----
 
 # Should matching be carried out
-match <- T
+match <- F
 # Thresholds for treatment
 tholds <- seq(.1,.4,.1)
 tholds_conditional <- 0.1
 # Should a table be printed in tex?
-print_tab <- F
+print_tab <- T
 
 
 # Matching parameters (to be used only if match == T)
@@ -134,9 +134,9 @@ tab_result <- tab_result[order(tab_result$Outcome,tab_result$Treatment),]
 # Printing of tables ----
 if ( print_tab ){
   
-  print.xtable(xtable(table),
+  print.xtable(xtable(tab_result),
                sanitize.text.function = function(x){x},
-               file = paste("Results/Tables/Main_results_",infix,".tex"),
+               file = paste("Results/Tables/Main_results_",infix,".tex",sep=""),
                booktabs = F,
                floating = F,
                hline.after = c(),
