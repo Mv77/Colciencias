@@ -89,6 +89,11 @@ data[, gpc := gpc / 100000]
 controls <- c("discapital","altura","slope","forest_cover","lluvia","agua","aptitud",
               "densidad_pob","indrural","a_edu")
 
+# Labels for variables in plots and tables
+control_names <- c("Distance to Dept. Capital","Height","Avg. Slope",
+                   "Forest Cover", "Rainfall", "Water. Avail. Index",
+                   "Soil Aptitude","Pop. Density", "Rurality Index", "Avg. Educ. Years")
+
 deps <- c("nbi","gini","gpc")
 
 data <- subset(data, select = c("codmpio","ano",controls,deps))
@@ -126,7 +131,7 @@ data <- merge(data,outc,
               by = "codmpio", all.x = T)
 
 # Save results ----
-save(data,controls,deps,
+save(data,controls,deps,control_names,
      file = "Data/data_proc.RData")
 
 write.csv(data, file = "Data/data_proc.csv")

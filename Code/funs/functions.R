@@ -270,7 +270,9 @@ tab <- function(t, digits = 4){
 }
 
 # Plots of control distributions pre and post matching
-control_balance_plots <- function(data, m, controls,id,thold){
+control_balance_plots <- function(data, m, controls,id,thold, control_names){
+  
+  # Control_names contains the labels for control variables in the same order for plots
   
   
   # Subset data to only those passed to the matching procedure
@@ -290,6 +292,19 @@ control_balance_plots <- function(data, m, controls,id,thold){
   # Pre-matching plot
   pret <- melt(data[,c(id,"Treatment",controls),with=F],
                id.vars = c(id,"Treatment"))
+  
+  # Substitute labels
+  pret[, variable := as.character(variable)]
+  
+  for (i in seq_along(controls)){
+    
+    pret[, variable := gsub(controls[i],
+                            control_names[i],
+                            variable)]
+    
+  }
+  
+  pret[, variable := factor(variable) ]
   
   pre <- ggplot(data = pret, aes(  x = value, fill = Treatment) ) +
     theme_bw() +
@@ -321,6 +336,16 @@ control_balance_plots <- function(data, m, controls,id,thold){
   
   pret <- melt(data[,c(id,"Status",controls),with=F],
                id.vars = c(id,"Status"))
+  
+  for (i in seq_along(controls)){
+    
+    pret[, variable := gsub(controls[i],
+                            control_names[i],
+                            variable)]
+    
+  }
+  
+  pret[, variable := factor(variable)]
   
   post <- ggplot(data = pret, aes(  x = value, fill = Status) ) +
     theme_bw() +
