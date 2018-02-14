@@ -427,7 +427,7 @@ desc_tables <- function(data,treatment, deps, controls, id) {
 }
 
 # Generate conditional effect plots similar to the ones in Hanauer & Canavire (2015)
-conditional_plot <- function(data,m,dep){
+conditional_plot <- function(data,m,dep,controls,control_names){
   
   # Keep only treated unites and matched controls
   control_pos <- match(m$id_controls, data[[m$id]])
@@ -435,7 +435,6 @@ conditional_plot <- function(data,m,dep){
   
   data <- data[c(control_pos,treated_pos),]
   
-  controls <- m$controls
   results <- list()
   
   for (y in dep) {
@@ -456,7 +455,7 @@ conditional_plot <- function(data,m,dep){
         plm_res <- plm(as.data.frame(data[Status == stat,]),
                        x = x, y = y, z = z, loess = T)
         
-        tab <- data.frame(X = plm_res$pred.x,
+        tab <- data.table(X = plm_res$pred.x,
                           Y = plm_res$pred.fit,
                           Upp = plm_res$pred.upp,
                           Low = plm_res$pred.low)
@@ -467,6 +466,15 @@ conditional_plot <- function(data,m,dep){
         table <- rbind(table,tab) 
         
       }
+      
+    }
+    
+    # Substitute labels
+    for (i in seq_along(controls)){
+      
+      table[, Variable := gsub(controls[i],
+                               control_names[i],
+                               Variable)]
       
     }
     

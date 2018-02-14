@@ -15,11 +15,11 @@ match <- F
 tholds <- seq(.1,.4,.1)
 tholds_conditional <- 0.1
 # Should a table be printed in tex?
-print_tab <- T
+print_tab <- F
 
 
 # Matching parameters (to be used only if match == T)
-genetic <- T
+genetic <- F
 M <- 1
 caliper <- NULL
 replace <- T
@@ -34,7 +34,7 @@ set.seed(1)
 infix <- ifelse(genetic,"GEN","MAH")
 
 # Load functions
-debugSource("Code/funs/functions.R")
+source("Code/funs/functions.R")
 
 # Load data
 load("Data/data_proc.RData")
@@ -54,6 +54,7 @@ for (thold in tholds){
   
 }
 
+# Effect estimates ----
 tables <- list()
 for (thold in tholds){
   
@@ -113,7 +114,8 @@ for (thold in tholds){
   # Conditional ATT plots
   if (thold %in% tholds_conditional) {
    
-    plots <- conditional_plot(data = data_m, m = m, dep = dep_d)
+    plots <- conditional_plot(data = data_m, m = m, dep = dep_d,
+                              controls = controls,control_names = control_names)
     
     for (p in plots) {
       
