@@ -490,9 +490,12 @@ conditional_plot <- function(data,m,dep,controls,control_names){
       geom_line(size = 1) +
       geom_ribbon(alpha = 0.2) +
       
+      xlab("Variable value") +
+      ylab(paste("Effect of variable on", gsub("D_","",toupper(y))))+
+      
       geom_hline(yintercept = 0, color = "black") +
       
-      facet_wrap(~Variable, scales = "free_x")
+      facet_wrap(~Variable, scales = "free")
     
     res <- list(list("table"=table,"plot"=p))
     names(res) <- y
