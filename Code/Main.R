@@ -19,7 +19,7 @@ print_tab <- F
 
 
 # Matching parameters (to be used only if match == T)
-genetic <- F
+genetic <- T
 M <- 1
 caliper <- NULL
 replace <- T
@@ -117,9 +117,15 @@ for (thold in tholds){
     plots <- conditional_plot(data = data_m, m = m, dep = dep_d,
                               controls = controls,control_names = control_names)
     
-    for (p in plots) {
+    for (j in seq_along(plots) ) {
       
-      print(p$plot)
+      print(plots[[j]]$plot)
+      # Print to pdf
+      dev.copy(pdf,
+               file = paste("Results/Images/Conditional_",deps[j],"_",
+                            thold*100,"_",infix,".pdf",sep =""))
+      dev.off()
+      
       
     }
      

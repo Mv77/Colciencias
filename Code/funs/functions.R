@@ -484,6 +484,8 @@ conditional_plot <- function(data,m,dep,controls,control_names){
     p <- ggplot(data = table, aes(x = X, y = Y, ymin = Low, ymax = Upp,
                                   colour = Status, fill = Status)) +
       theme_bw() +
+      theme(legend.position="bottom") +
+      
       scale_color_gdocs() +
       scale_fill_gdocs() +
       

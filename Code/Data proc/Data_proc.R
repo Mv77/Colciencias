@@ -90,7 +90,7 @@ controls <- c("discapital","altura","slope","forest_cover","lluvia","agua","apti
               "densidad_pob","indrural","a_edu")
 
 # Labels for variables in plots and tables
-control_names <- c("Distance to Dept. Capital","Height","Avg. Slope",
+control_names <- c("Dist. to Dept. Capital","Height","Avg. Slope",
                    "Forest Cover", "Rainfall", "Water. Avail. Index",
                    "Soil Aptitude","Pop. Density", "Rurality Index", "Avg. Educ. Years")
 
