@@ -9,6 +9,9 @@ library(dplyr)
 library(ggplot2)
 library(ggthemes)
 
+# Parameters
+thold <- 0.1
+
 # Data pre-processing ----
 
 # Load data
@@ -18,7 +21,7 @@ load("Data/data_proc.RData")
 source("Code/funs/plm.R")
 
 # Load treatment information (to obtain excluded areas)
-load("Results/Treatment/Treatment_10.RData")
+load(paste("Results/Treatment/Treatment_",thold*100,".RData", sep = "") )
 
 # Keep only protection on the desired categories
 prot <- subset(prot, subset = categoria %in% cats)
@@ -58,7 +61,7 @@ data <- subset(data, subset = ano == 1993,
 data <- subset(data, complete.cases(data))
 data <- data.frame(data)
 
-#data <- subset(data, subset = perc_prot_93 != 0)
+tables <- list()
 for (i in seq_along(ddeps) ){
   
   y <- ddeps[i]
@@ -71,17 +74,29 @@ for (i in seq_along(ddeps) ){
                     Upp = plm_res$pred.upp,
                     Low = plm_res$pred.low)
   
-  p <- ggplot(data = tab, aes(x = X, y = Y, ymin = Low, ymax = Upp)) +
-    theme_bw() +
-    scale_color_gdocs() +
-    scale_fill_gdocs() +
-    ylab(paste("ATT estimate on",toupper(deps[i]))) +
-    xlab("Fraction of municipality area protected") +
-    geom_line(size = 1) +
-    geom_ribbon(alpha = 0.2) +
-    
-    geom_hline(yintercept = 0, color = "black")
+  tab$outcome <- toupper(deps[i])
   
-  print(p)
+  tables <- c(tables,list(tab))
   
 }
+
+tables <- do.call(rbind,tables)
+tables$outcome <- as.factor(tables$outcome)
+
+p <- ggplot(data = tables, aes(x = X, y = Y, ymin = Low, ymax = Upp)) +
+  theme_bw() +
+  scale_color_gdocs() +
+  scale_fill_gdocs() +
+  ylab("Effect estimate") +
+  xlab("Fraction of municipality area protected") +
+  geom_line(size = 1) +
+  geom_ribbon(alpha = 0.2) +
+  geom_hline(yintercept = 0, color = "black") +
+  facet_wrap(~outcome, nrow = 3, scales = "free_y")
+print(p)
+
+# Print to pdf
+dev.copy(pdf,
+         file = paste("Results/Images/Dose_effects_",
+                      thold*100,".pdf",sep =""))
+dev.off()
