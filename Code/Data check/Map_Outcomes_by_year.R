@@ -5,13 +5,14 @@ library(data.table)
 library(dplyr)
 library(foreign)
 library(ggplot2)
+library(ggthemes)
 library(maptools)
 library(ggmap)
 library(broom)
 
 outcomes <- c("nbi","gini","gpc")
 
-output <- "png"
+output <- "pdf"
 
 # Load Data
 load("Data/data_proc.RData")
@@ -41,6 +42,8 @@ for (out in outcomes){
                             fill = out),
                  size = .3,
                  colour = 'black') +
+    scale_fill_continuous(name = toupper(out)) +
+    theme(text = element_text(size=15) ) +
     facet_wrap(~ano)
   
   print(p)
@@ -68,27 +71,3 @@ for (out in outcomes){
   
   
 }
-
-# Julian ----
-# load("Data/data_julian.RData")
-# data <- data.table(data05_marg)
-# rm(list = setdiff(ls(),c("map","data")))
-# data[,  Ind := 1]
-# 
-# data <- merge(map, select(data, c("codmpio","Ind")),
-#               all.x = T)
-# # Plot
-# p <- ggplot() +
-#   theme_bw() +
-#   geom_polygon(data = data,
-#                aes_string(x = "long", y = "lat",
-#                           group = "group",
-#                           fill = "Ind"),
-#                size = .3,
-#                colour = 'black')
-# print(p)
-# 
-# dev.copy(pdf,
-#          file = "Results/Maps/Julian_obs.pdf")
-# dev.off()
-

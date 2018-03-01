@@ -14,12 +14,14 @@ match <- F
 # Thresholds for treatment
 tholds <- seq(.1,.4,.1)
 tholds_conditional <- 0.1
+# Should a balance table be printed?
+balance_tab <- T
 # Should a table be printed in tex?
 print_tab <- F
 
 
 # Matching parameters (to be used only if match == T)
-genetic <- T
+genetic <- F
 M <- 1
 caliper <- NULL
 replace <- T
@@ -84,6 +86,27 @@ for (thold in tholds){
     load(paste("Results/Match/Match_",100*thold,"_",infix,".RData", sep =""))
     
   }
+  
+  if (balance_tab){
+    
+    balance <- m$balance
+    # Replace control labels
+    for (i in seq_along(controls)){
+      
+      rownames(balance) <- gsub(controls[i],
+                                control_names[i],
+                                rownames(balance))
+      
+    }
+    # Transform to latex
+    table <- xtable(balance)
+    print.xtable(table,
+                 file = paste("Results/Tables/Balance_",100*thold,"_",infix,".tex",sep = ""),
+                 booktabs = T,
+                 floating = F)
+    
+  }
+  
   
   # Find effect estimates and format them in tables
   est <- estimate_atts(data = data_m,

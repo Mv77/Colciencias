@@ -66,11 +66,6 @@ match_prot <- function(data, id = "codmpio", treatment = "Status",
   
   
   balance <- bal_tab(bal, controls)
-  table <- xtable(balance)
-  print.xtable(table,
-               file = paste("Results/Tables/Balance_",100*thold,"_",infix,".tex",sep = ""),
-               booktabs = T,
-               floating = F)
   
   id_controls <- data[[id]][mt$index.control]
   
