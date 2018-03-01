@@ -74,13 +74,14 @@ for (i in seq_along(ddeps) ){
                     Upp = plm_res$pred.upp,
                     Low = plm_res$pred.low)
   
-  tab$outcome <- toupper(deps[i])
+  tab$outcome <- dep_names[i]
   
   tables <- c(tables,list(tab))
   
 }
 
 tables <- do.call(rbind,tables)
+
 tables$outcome <- as.factor(tables$outcome)
 
 p <- ggplot(data = tables, aes(x = X, y = Y, ymin = Low, ymax = Upp)) +

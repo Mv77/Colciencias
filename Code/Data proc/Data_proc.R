@@ -94,7 +94,11 @@ control_names <- c("Dist. to Dept. Capital","Height","Avg. Slope",
                    "Forest Cover", "Rainfall", "Water. Avail. Index",
                    "Soil Aptitude","Pop. Density", "Rurality Index", "Avg. Educ. Years")
 
+# Dependents
 deps <- c("nbi","gini","gpc")
+
+# Labels for dependents in plots and tables
+dep_names <- c("UBN","GINI","PCE")
 
 data <- subset(data, select = c("codmpio","ano",controls,deps))
 
@@ -131,7 +135,7 @@ data <- merge(data,outc,
               by = "codmpio", all.x = T)
 
 # Save results ----
-save(data,controls,deps,control_names,
+save(data,controls,deps,control_names,dep_names,
      file = "Data/data_proc.RData")
 
 write.csv(data, file = "Data/data_proc.csv")
