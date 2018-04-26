@@ -27,6 +27,16 @@ newvars[ano == 1990, ano := 1993]
 data <- merge(data, newvars, by = c("codmpio","ano"),
               all.x = T)
 
+# Nightlight Data ----
+load("Data/Nightlight.RData")
+
+mean_nl <- as.data.table(mean_nl)
+
+names(mean_nl) <- c("codmpio","ano","mean_nightlight")
+mean_nl[, codmpio := as.numeric(as.character(codmpio))]
+
+data <- merge(data, mean_nl, by = c("codmpio","ano"),
+              all.x = T)
 
 # Paste NBI ----
 load("Data/NBI Dane/nbi.RData")
@@ -87,12 +97,12 @@ data[, gpc := gpc / 100000]
 
 # Variables of interest for balance
 controls <- c("discapital","altura","slope","forest_cover","lluvia","agua","aptitud",
-              "densidad_pob","indrural","a_edu")
+              "densidad_pob","indrural","a_edu","mean_nightlight")
 
 # Labels for variables in plots and tables
 control_names <- c("Dist. to Dept. Capital","Height","Avg. Slope",
                    "Forest Cover", "Rainfall", "Water. Avail. Index",
-                   "Soil Aptitude","Pop. Density", "Rurality Index", "Avg. Educ. Years")
+                   "Soil Aptitude","Pop. Density", "Rurality Index", "Avg. Educ. Years","Night light")
 
 # Dependents
 deps <- c("nbi","gini","gpc")
