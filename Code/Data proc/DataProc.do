@@ -1,11 +1,11 @@
 clear all
 
-global datapath "C:/Users/Mateo/Google Drive/Gustavo/Protected/Data"
+global datapath "C:/Users/Mateo/Google Drive/Colciencias/Data"
 
 * Load data
 use "$datapath/Panel CEDE/PANEL_CARACTERISTICAS_GENERALES"
 
-local vargen "codmpio depto municipio ano pobl* indrural areaoficialkm2 altura discapital dismdo gpc pobreza gini nbi"
+local vargen "codmpio depto municipio ano ao_crea pobl* indrural areaoficialkm2 altura discapital dismdo gpc pobreza gini nbi"
 keep `vargen' 
 
 
@@ -72,4 +72,4 @@ foreach x in `nominales' {
 
 
 
-saveold "C:/Users/Mateo/Google Drive/Ms/Micro Desarrollo/Trabajo/Data/data.dta", version(12) replace
+saveold "$datapath/data.dta", version(12) replace

@@ -10,18 +10,18 @@ library(dplyr)
 # Parameters ----
 
 # Should matching be carried out
-match <- F
+match <- T
 # Thresholds for treatment
 tholds <- seq(.1,.4,.1)
 tholds_conditional <- 0.1
 # Should a balance table be printed?
-balance_tab <- T
+balance_tab <- F
 # Should a table be printed in tex?
 print_tab <- F
 
 
 # Matching parameters (to be used only if match == T)
-genetic <- F
+genetic <- T
 M <- 1
 caliper <- NULL
 replace <- T
@@ -53,6 +53,11 @@ for (thold in tholds){
   
   # Those not treated or protected can serve as controls
   data[[treat]][is.na(data[[treat]])] <- "Control"
+  
+  # Create list of municipalities founded after 1993
+  exclude <- y_creation[ao_crea > 1993, "codmpio"] %>% unlist()
+  # Mark them as excluded
+  data[[treat]][data$codmpio %in% exclude] <- "Excluded"
   
 }
 

@@ -93,6 +93,9 @@ data[, agua := agua/10^6]
 # Normalizar gpc por 100.000
 data[, gpc := gpc / 100000]
 
+# Create dataset with the date of creation of each municipality ----
+y_creation <- subset(data, select = c("codmpio","ao_crea")) %>% unique()
+
 # Subset de variables de interes ----
 
 # Variables of interest for balance
@@ -119,7 +122,7 @@ data[, nobs := NULL]
 
 # Computation of differences ----
 
-# Subset data ----
+# Subset data
 outc <- data[,c("codmpio","ano",deps), with = F]
 # Reshape wide
 outc <- dcast(data, codmpio ~ ano, value.var = deps)
@@ -145,7 +148,7 @@ data <- merge(data,outc,
               by = "codmpio", all.x = T)
 
 # Save results ----
-save(data,controls,deps,control_names,dep_names,
+save(data,y_creation,controls,deps,control_names,dep_names,
      file = "Data/data_proc.RData")
 
 write.csv(data, file = "Data/data_proc.csv")
