@@ -11,13 +11,14 @@ library(dplyr)
 
 # Should matching be carried out
 match <- T
+
 # Thresholds for treatment
 tholds <- seq(.1,.4,.1)
 tholds_conditional <- 0.1
 # Should a balance table be printed?
-balance_tab <- F
+balance_tab <- T
 # Should a table be printed in tex?
-print_tab <- F
+print_tab <- T
 
 
 # Matching parameters (to be used only if match == T)
@@ -26,7 +27,6 @@ M <- 1
 caliper <- NULL
 replace <- T
 popsize <- 5000
-
 # Setup ----
 
 # Set seed
@@ -127,7 +127,7 @@ for (thold in tholds){
   
   # Add an outcome as a variable and an 
   # indicator for the treatment threshold, in the first position
-  est <- cbind(Outcome = row.names(est),
+  est <- cbind(Outcome = dep_names[match(row.names(est),deps)],
                Treatment = paste("$",rep(thold,nrow(est)),"$", sep = ""),
                est)
   
@@ -143,7 +143,7 @@ for (thold in tholds){
   if (thold %in% tholds_conditional) {
    
     plots <- conditional_plot(data = data_m, m = m, dep = dep_d,
-                              controls = controls,control_names = control_names)
+                              controls = controls,control_names = control_names, dep_names = dep_names)
     
     for (j in seq_along(plots) ) {
       

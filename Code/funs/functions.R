@@ -422,7 +422,7 @@ desc_tables <- function(data,treatment, deps, controls, id) {
 }
 
 # Generate conditional effect plots similar to the ones in Hanauer & Canavire (2015)
-conditional_plot <- function(data,m,dep,controls,control_names){
+conditional_plot <- function(data,m,dep,controls,control_names,dep_names){
   
   # Keep only treated unites and matched controls
   control_pos <- match(m$id_controls, data[[m$id]])
@@ -488,7 +488,7 @@ conditional_plot <- function(data,m,dep,controls,control_names){
       geom_ribbon(alpha = 0.2) +
       
       xlab("Variable value") +
-      ylab(paste("Effect of variable on", gsub("D_","",toupper(y))))+
+      ylab(paste("Effect of variable on", dep_names[match(y,dep)]))+
       
       geom_hline(yintercept = 0, color = "black") +
       

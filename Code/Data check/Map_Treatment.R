@@ -43,7 +43,7 @@ for (thold in tholds) {
   load(paste("Results/Treatment/Treatment_",100*thold,".RData", sep =""))
   
   names(treatment) <- c("codmpio","Status")  
-  excluded <- treatment$codmpio[treatment$Status == "Protected"]
+  excluded <- treatment$codmpio[treatment$Status == "Excluded"]
   
   t <- rbind(t, data.table("codmpio" = excluded, "Status" = "Excluded"))
   

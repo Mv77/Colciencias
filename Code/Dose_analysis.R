@@ -83,6 +83,9 @@ for (i in seq_along(ddeps) ){
 tables <- do.call(rbind,tables)
 
 tables$outcome <- as.factor(tables$outcome)
+tables <- data.table(tables)
+
+intercepts <- subset(tables, subset = X == 0, select = c("Y","outcome"))
 
 p <- ggplot(data = tables, aes(x = X, y = Y, ymin = Low, ymax = Upp)) +
   theme_bw() +
@@ -92,7 +95,7 @@ p <- ggplot(data = tables, aes(x = X, y = Y, ymin = Low, ymax = Upp)) +
   xlab("Fraction of municipality area protected") +
   geom_line(size = 1) +
   geom_ribbon(alpha = 0.2) +
-  geom_hline(yintercept = 0, color = "black") +
+  geom_hline(data = intercepts, aes(yintercept = Y), color = "black") +
   facet_wrap(~outcome, nrow = 3, scales = "free_y")
 print(p)
 

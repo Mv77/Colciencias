@@ -100,18 +100,18 @@ y_creation <- subset(data, select = c("codmpio","ao_crea")) %>% unique()
 
 # Variables of interest for balance
 controls <- c("discapital","altura","slope","forest_cover","lluvia","agua","aptitud",
-              "densidad_pob","indrural","a_edu","mean_nightlight")
+              "densidad_pob","indrural","a_edu")
 
 # Labels for variables in plots and tables
 control_names <- c("Dist. to Dept. Capital","Height","Avg. Slope",
                    "Forest Cover", "Rainfall", "Water. Avail. Index",
-                   "Soil Aptitude","Pop. Density", "Rurality Index", "Avg. Educ. Years","Night light")
+                   "Soil Aptitude","Pop. Density", "Rurality Index", "Avg. Educ. Years")
 
 # Dependents
-deps <- c("nbi","gini","gpc")
+deps <- c("nbi","gini","gpc","mean_nightlight")
 
 # Labels for dependents in plots and tables
-dep_names <- c("UBN","GINI","PCE")
+dep_names <- c("UBN","GINI","PCE","Nightlight")
 
 data <- subset(data, select = c("codmpio","ano",controls,deps))
 

@@ -1,11 +1,10 @@
 # Preamble ----
 rm(list=ls())
-setwd("C:/Users/Mateo/Google Drive/Gustavo/Protected")
 
 library(data.table)
 library(stringr)
 
-prot <- fread("Data/Protected_mateo.csv")
+prot <- fread("Data/PA Designation Mateo/Protected_mateo.csv")
 prot[, codmpio := as.numeric(MPIO_CCNCT)]
 
 # Fix a wrong resolution
@@ -32,5 +31,5 @@ prot <- subset(prot,
                select = c("categoria","codmpio","per_prot","ano_prot"))
 
 write.csv(prot,
-          file = "Data/Protection_allcats.csv",
+          file = "Data/PA Designation Mateo/Protection_allcats.csv",
           row.names = F)
