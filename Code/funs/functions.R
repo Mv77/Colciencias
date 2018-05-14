@@ -269,7 +269,6 @@ control_balance_plots <- function(data, m, controls,id,thold, control_names){
   
   # Control_names contains the labels for control variables in the same order for plots
   
-  
   # Subset data to only those passed to the matching procedure
   data <- subset(data,
                  ano == 1993 & codmpio %in% c(m$id_controls,m$id_treated,m$id_unused))
@@ -367,20 +366,14 @@ control_balance_plots <- function(data, m, controls,id,thold, control_names){
 }
 
 # Descriptive statistics tables
-desc_tables <- function(data,treatment, deps, controls, id) {
+desc_tables <- function(data,m, deps, controls, id, dep_names, control_names) {
   
-  # Rename treatment info
-  names(treatment) <- c("codmpio","Status")
+  # Subset data to only those passed to the matching procedure
+  data <- subset(data, codmpio %in% c(m$id_controls,m$id_treated,m$id_unused))
   
-  # Paste treatment with data
-  data <- merge(data, treatment, by = "codmpio", all.x = T)
-  
-  # Non - pasted units are controls as they dont have protected areas
-  data[is.na(Status), Status := "Control"]
-  
-  # Ommit areas which are not control or treated
-  data <- subset(data, Status %in% c("Treated","Control"))
-  
+  # Create a status variable, marking treated and control units (before matching)
+  data[, Status := "Control"]
+  data[codmpio %in% m$id_treated, Status := "Treated"]
   
   # Create indicator for different groups in which stats will be split
   data[, group := 0]
@@ -392,11 +385,14 @@ desc_tables <- function(data,treatment, deps, controls, id) {
                          labels = c("Control 1993","Treated 1993",
                                     "Control 2005","Treated 2005"))]
   
-  # Controles pretreatment
+  # Controls pretreatment
   datades <- data %>%
     subset(ano == 1993, select = c(controls,"group")) %>%
     data.frame()
-  tableContinuous( vars = datades[,controls],
+  # Replace names
+  names(datades)[match(controls, names(datades))] <- control_names
+  # Create table
+  tableContinuous( vars = datades[,control_names],
                    group = datades$group,
                    stats = c("n","mean","s","min","max"),
                    prec = 2,
@@ -410,7 +406,10 @@ desc_tables <- function(data,treatment, deps, controls, id) {
   datades <- data %>%
     subset(select = c(deps,"group")) %>%
     data.frame()
-  tableContinuous( vars = datades[,deps],
+  # Replace names
+  names(datades)[match(deps, names(datades))] <- dep_names
+  # Create table
+  tableContinuous( vars = datades[,dep_names],
                    group = datades$group,
                    stats = c("n","mean","s","min","max"),
                    prec = 3,
