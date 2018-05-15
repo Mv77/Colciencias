@@ -10,7 +10,7 @@ library(dplyr)
 # Parameters ----
 
 # Should matching be carried out
-match <- T
+match <- F
 
 # Thresholds for treatment
 tholds <- seq(.1,.4,.1)

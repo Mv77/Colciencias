@@ -475,6 +475,15 @@ conditional_plot <- function(data,m,dep,controls,control_names,dep_names){
     table$Variable <- as.factor(table$Variable)
     table$Status <- as.factor(table$Status)
     
+    # Find common support for x
+    table[, minx := min(X), by = c("Variable","Status")]
+    table[, maxx := max(X), by = c("Variable","Status")]
+    
+    table[, maxminx := max(minx), by = Variable]
+    table[, minmaxx := min(maxx), by = Variable]
+    
+    table <- subset(table, X >= maxminx & X <= minmaxx)
+    
     p <- ggplot(data = table, aes(x = X, y = Y, ymin = Low, ymax = Upp,
                                   colour = Status, fill = Status)) +
       theme_bw() +

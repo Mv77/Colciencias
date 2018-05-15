@@ -61,6 +61,8 @@ data <- subset(data, subset = ano == 1993,
 data <- subset(data, complete.cases(data))
 data <- data.frame(data)
 
+
+
 tables <- list()
 for (i in seq_along(ddeps) ){
   
@@ -86,8 +88,11 @@ tables$outcome <- as.factor(tables$outcome)
 tables <- data.table(tables)
 
 intercepts <- subset(tables, subset = X == 0, select = c("Y","outcome"))
+names(intercepts) <- c("Intercept","outcome")
 
-p <- ggplot(data = tables, aes(x = X, y = Y, ymin = Low, ymax = Upp)) +
+tables <- merge(tables, intercepts, by = "outcome", all.x = T)
+
+p <- ggplot(data = tables, aes(x = X, y = Y - Intercept, ymin = Low - Intercept, ymax = Upp - Intercept)) +
   theme_bw() +
   scale_color_gdocs() +
   scale_fill_gdocs() +
@@ -95,7 +100,7 @@ p <- ggplot(data = tables, aes(x = X, y = Y, ymin = Low, ymax = Upp)) +
   xlab("Fraction of municipality area protected") +
   geom_line(size = 1) +
   geom_ribbon(alpha = 0.2) +
-  geom_hline(data = intercepts, aes(yintercept = Y), color = "black") +
+  geom_hline(yintercept = 0, color = "red", size = 1, alpha = 0.6) +
   facet_wrap(~outcome, nrow = 3, scales = "free_y")
 print(p)
 
